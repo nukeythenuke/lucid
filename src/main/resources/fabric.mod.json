@@ -1,37 +1,35 @@
 {
   "schemaVersion": 1,
-  "id": "modid",
+  "id": "lucid",
   "version": "${version}",
 
-  "name": "Example Mod",
-  "description": "This is an example description! Tell everyone what your mod is about!",
+  "name": "lucid",
+  "description": "Instead of skipping the night time goes faster as you sleep",
   "authors": [
-    "Me!"
+    "nukeythenuke"
   ],
   "contact": {
-    "homepage": "https://fabricmc.net/",
-    "sources": "https://github.com/FabricMC/fabric-example-mod"
+    "homepage": "",
+    "sources": ""
   },
 
   "license": "CC0-1.0",
-  "icon": "assets/modid/icon.png",
+  "icon": "assets/lucid/icon.png",
 
   "environment": "*",
   "entrypoints": {
     "main": [
-      "net.fabricmc.example.ExampleMod"
+      "me.nukeythenuke.lucid.Lucid"
     ]
   },
   "mixins": [
-    "modid.mixins.json"
+    "lucid.mixins.json"
   ],
 
   "depends": {
     "fabricloader": ">=0.7.4",
-    "fabric": "*",
     "minecraft": "1.16.x"
   },
   "suggests": {
-    "flamingo": "*"
   }
 }
