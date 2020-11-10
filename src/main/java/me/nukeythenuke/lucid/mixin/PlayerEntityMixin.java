@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(PlayerEntity.class)
 public class PlayerEntityMixin {
     // Prevent vanilla sleeping
-    @Inject(method = "isSleepingLongEnough", at = @At("RETURN"))
+    @Inject(method = "isSleepingLongEnough", at = @At("RETURN"), cancellable = true)
     public void neverLongEnough(CallbackInfoReturnable<Boolean> cir) {
         cir.setReturnValue(false);
     }
