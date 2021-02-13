@@ -10,6 +10,6 @@ As you are ticking the world at 10x the normal speed, you are effectivly doing 1
 May break some redstone contraptions (I noticed while testing that a fast redstone clock I had setup stopped shortly after starting to sleep), I'm unsure as to why this is.  
 Sky jumps when sleeping.
 
-## Compatability
+## Compatibility
 May or may not work with sleep-vote type mods/datapacks. Let me know.  
-If you know of any incompatabilities please let me know so I can try work them out.
+If you know of any incompatibilities please let me know so I can try work them out.
