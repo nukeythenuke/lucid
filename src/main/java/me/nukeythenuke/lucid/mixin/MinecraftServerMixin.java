@@ -11,9 +11,15 @@ import java.util.stream.IntStream;
 
 @Mixin(MinecraftServer.class)
 public abstract class MinecraftServerMixin {
+    // Warp worlds
     @Inject(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/MinecraftServer;tickWorlds(Ljava/util/function/BooleanSupplier;)V", shift = At.Shift.AFTER))
     private void tickWarp(BooleanSupplier shouldKeepTicking, CallbackInfo ci) {
-        Lucid.shouldWarp.forEach(world -> IntStream.range(1, Lucid.TICK_SPEED_MULTIPLIER).forEach(i -> world.tick(shouldKeepTicking)));
+        Lucid.shouldWarp.forEach( world -> {
+            for(int i = 0; i < Lucid.TICK_SPEED_MULTIPLIER; i++) {
+                world.tick(shouldKeepTicking);
+            }
+        });
+
         Lucid.shouldWarp.clear();
     }
 }
