@@ -43,7 +43,7 @@ public abstract class ServerWorldMixin extends World {
         this.allPlayersSleeping = true;
     }
 
-    // Do not skip night, instead set shouldWarp to true
+    // Do not skip night, instead add the world to Lucid.shouldWarp
     @Redirect(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/world/ServerWorld;setTimeOfDay(J)V"))
     private void warpNotSkip(ServerWorld serverWorld, long timeOfDay) {
         Lucid.shouldWarp.add(serverWorld);
