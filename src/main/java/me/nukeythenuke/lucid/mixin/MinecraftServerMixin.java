@@ -1,5 +1,6 @@
 package me.nukeythenuke.lucid.mixin;
 
+import me.nukeythenuke.lucid.Config;
 import me.nukeythenuke.lucid.Lucid;
 import net.minecraft.server.MinecraftServer;
 import org.spongepowered.asm.mixin.Mixin;
@@ -15,7 +16,7 @@ public abstract class MinecraftServerMixin {
     @Inject(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/MinecraftServer;tickWorlds(Ljava/util/function/BooleanSupplier;)V", shift = At.Shift.AFTER))
     private void tickWarp(BooleanSupplier shouldKeepTicking, CallbackInfo ci) {
         Lucid.shouldWarp.forEach( world -> {
-            for(int i = 0; i < Lucid.TICK_SPEED_MULTIPLIER; i++) {
+            for(int i = 0; i < Lucid.tickSpeedMultiplier(); i++) {
                 world.tick(shouldKeepTicking);
             }
         });
