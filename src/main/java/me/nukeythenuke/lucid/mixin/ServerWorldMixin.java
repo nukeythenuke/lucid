@@ -33,9 +33,11 @@ public abstract class ServerWorldMixin extends World {
 
     // Determine whether or not we are in a Lucid induced world tick
     private boolean inWarpTick;
+    private boolean oneTickNight;
     @Inject(method = "tick", at = @At(value = "HEAD"))
     private void setInWarpTick(CallbackInfo ci) {
         inWarpTick = Lucid.shouldWarp.contains(this);
+        oneTickNight = Lucid.tickSpeedMultiplier() == 0;
     }
 
     // Set allPlayersSleeping back to true as we are not waking players
@@ -54,14 +56,15 @@ public abstract class ServerWorldMixin extends World {
     @Redirect(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/world/ServerWorld;wakeSleepingPlayers()V"))
     private void preventWakeSleepingPlayers(ServerWorld serverWorld) { }
 
-    // Warp chunk manager if in a vanilla induced tick or chunk manager warping is enabled
+    // Warp chunk manager if in a vanilla induced tick or chunk manager warping is enabled. Disabled if oneTickNight is true
     @Redirect(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/world/ServerChunkManager;tick(Ljava/util/function/BooleanSupplier;)V"))
     private void warpChunks(ServerChunkManager serverChunkManager, BooleanSupplier shouldKeepTicking) {
-        if (!inWarpTick || Lucid.isEnabledChunkManagerWarping()) {
+        if (!inWarpTick || (Lucid.isEnabledChunkManagerWarping() && !oneTickNight)) {
             serverChunkManager.tick(shouldKeepTicking);
         }
     }
 
+    // Warp raid manager if in a vanilla induced tick or raid manager warping is enabled.
     @Redirect(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/village/raid/RaidManager;tick()V"))
     private void warpRaidManager(RaidManager raidManager) {
         if (!inWarpTick || Lucid.isEnabledRaidManagerWarping()) {
@@ -77,10 +80,10 @@ public abstract class ServerWorldMixin extends World {
         }
     }
 
-    // Warp entities if in a vanilla induced world tick or entity warping is enabled
+    // Warp entities if in a vanilla induced world tick or entity warping is enabled. Disabled if oneTickNight is true
     @Redirect(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/world/ServerWorld;tickEntity(Ljava/util/function/Consumer;Lnet/minecraft/entity/Entity;)V"))
     private void warpEntities(ServerWorld serverWorld, Consumer<Entity> consumer, Entity entity) {
-        if (!inWarpTick || Lucid.isEnabledEntityWarping()) {
+        if (!inWarpTick || (Lucid.isEnabledEntityWarping() && !oneTickNight)) {
             tickEntity(consumer, entity);
         }
     }

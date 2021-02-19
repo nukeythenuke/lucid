@@ -24,7 +24,7 @@ public class Lucid implements ModInitializer {
     private static final String IS_ENABLED_ENTITY_WARPING_NAME = "enableEntityWarping";
     private static final String IS_ENABLED_BLOCK_ENTITY_WARPING_NAME = "enableBlockEntityWarping";
 
-    private static final int DEFAULT_TICK_SPEED_MULTIPLIER = 10;
+    private static final int DEFAULT_TICK_SPEED_MULTIPLIER = 0;
     private static final boolean DEFAULT_IS_ENABLED_CHUNK_MANAGER_WARPING = false;
     private static final boolean DEFAULT_IS_ENABLED_RAID_MANAGER_WARPING = false;
     private static final boolean DEFAULT_IS_ENABLED_ENTITY_WARPING = false;
@@ -63,11 +63,11 @@ public class Lucid implements ModInitializer {
                         new Config.ConfigEntry(
                                 TICK_SPEED_MULTIPLIER_NAME,
                                 String.valueOf(tickSpeedMultiplier()),
-                                "How many times faster than normal the night should pass.\nDefault: " + DEFAULT_TICK_SPEED_MULTIPLIER),
+                                "How many times faster than normal the night should pass. If this is set to 0 then Lucid attempts to skip the night in 1 tick.\nDefault: " + DEFAULT_TICK_SPEED_MULTIPLIER),
                         new Config.ConfigEntry(
                                 IS_ENABLED_CHUNK_MANAGER_WARPING_NAME,
                                 String.valueOf(isEnabledChunkManagerWarping()),
-                                "Mob spawning etc.\nDefault: " + DEFAULT_IS_ENABLED_CHUNK_MANAGER_WARPING),
+                                "Mob spawning etc. Ignored if " + TICK_SPEED_MULTIPLIER_NAME + " = 0.\nDefault: " + DEFAULT_IS_ENABLED_CHUNK_MANAGER_WARPING),
                         new Config.ConfigEntry(
                                 IS_ENABLED_RAID_MANAGER_WARPING_NAME,
                                 String.valueOf(isEnabledRaidManagerWarping()),
@@ -75,7 +75,7 @@ public class Lucid implements ModInitializer {
                         new Config.ConfigEntry(
                                 IS_ENABLED_ENTITY_WARPING_NAME,
                                 String.valueOf(isEnabledEntityWarping()),
-                                "Mob movement etc.\nDefault: " + DEFAULT_IS_ENABLED_ENTITY_WARPING),
+                                "Mob movement etc. Ignored if " + TICK_SPEED_MULTIPLIER_NAME + " = 0.\nDefault: " + DEFAULT_IS_ENABLED_ENTITY_WARPING),
                         new Config.ConfigEntry(
                                 IS_ENABLED_BLOCK_ENTITY_WARPING_NAME,
                                 String.valueOf(isEnabledBlockEntityWarping()),
