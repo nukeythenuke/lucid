@@ -4,7 +4,7 @@
 Lucid is a mod that allows time to pass as you sleep. It does this by preventing the night from being skipped and instead speed up time (tick warps).
 
 ## Performance
-As you are ticking the world at x times the normal speed, you are effectivly doing x times the work, disabling some of the features and / or reducing the tick rate multiplier via the config file should help somewhat.
+With "enableChunkManagerWarping = false", set in the config file, the performance impact is negligible. With "enableChunkManagerWarping = true", with a decent PC, you should be able to set your "tickSpeedMultiplier" to ~20 before the server has a fit.
 
 ## Known Issues
 May break some redstone contraptions (I noticed while testing that a fast redstone clock I had setup stopped shortly after starting to sleep), I'm unsure as to why this is.  
