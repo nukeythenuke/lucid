@@ -10,9 +10,7 @@ import net.minecraft.village.raid.RaidManager;
 import net.minecraft.world.MutableWorldProperties;
 import net.minecraft.world.World;
 import net.minecraft.world.dimension.DimensionType;
-import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -29,19 +27,11 @@ public abstract class ServerWorldMixin extends World {
         super(properties, registryRef, dimensionType, profiler, isClient, debugWorld, seed);
     }
 
-    @Shadow private boolean allPlayersSleeping;
-
     // Determine whether or not we are in a Lucid induced world tick
     private boolean inWarpTick;
     @Inject(method = "tick", at = @At(value = "HEAD"))
     private void setInWarpTick(CallbackInfo ci) {
         inWarpTick = Lucid.shouldWarp.contains(this);
-    }
-
-    // Set allPlayersSleeping back to true as we are not waking players
-    @Inject(method = "tick", at = @At(value = "FIELD", target = "Lnet/minecraft/server/world/ServerWorld;allPlayersSleeping:Z", opcode = Opcodes.PUTFIELD, shift = At.Shift.AFTER))
-    private void allPlayersStillSleeping(BooleanSupplier shouldKeepTicking, CallbackInfo ci) {
-        this.allPlayersSleeping = true;
     }
 
     // Do not skip night, instead add the world to Lucid.shouldWarp
@@ -62,6 +52,7 @@ public abstract class ServerWorldMixin extends World {
         }
     }
 
+    // Warp raid manager if in a vanilla induced tick or raid manager warping is enabled
     @Redirect(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/village/raid/RaidManager;tick()V"))
     private void warpRaidManager(RaidManager raidManager) {
         if (!inWarpTick || Lucid.isEnabledRaidManagerWarping()) {
@@ -78,7 +69,8 @@ public abstract class ServerWorldMixin extends World {
     }
 
     // Warp entities if in a vanilla induced world tick or entity warping is enabled
-    @Redirect(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/world/ServerWorld;tickEntity(Ljava/util/function/Consumer;Lnet/minecraft/entity/Entity;)V"))
+    // "method_31420" is a lambda called within a foreach loop that loops through entities
+    @Redirect(method = "method_31420", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/world/ServerWorld;tickEntity(Ljava/util/function/Consumer;Lnet/minecraft/entity/Entity;)V"))
     private void warpEntities(ServerWorld serverWorld, Consumer<Entity> consumer, Entity entity) {
         if (!inWarpTick || Lucid.isEnabledEntityWarping()) {
             tickEntity(consumer, entity);
