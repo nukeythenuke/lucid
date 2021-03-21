@@ -66,8 +66,8 @@ public abstract class ServerWorldMixin extends World {
         for (; ticksWarped < ticksToWarp; ++ticksWarped) {
             this.tickBlockEntities();
 
-            // Limit how long we can spend ticking block entities
-            if (Clock.systemUTC().instant().isAfter(start.plusMillis(tickBudget))) {
+            // Limit how long we can spend ticking block entities - if tickBudget is set to 0 we don't budget our time
+            if (tickBudget != 0 && Clock.systemUTC().instant().isAfter(start.plusMillis(tickBudget))) {
                 break;
             }
         }
