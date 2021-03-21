@@ -1,90 +1,78 @@
 package me.nukeythenuke.lucid.mixin;
 
-import me.nukeythenuke.lucid.Lucid;
-import net.minecraft.entity.Entity;
-import net.minecraft.server.world.ServerChunkManager;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.profiler.Profiler;
 import net.minecraft.util.registry.RegistryKey;
-import net.minecraft.village.raid.RaidManager;
 import net.minecraft.world.MutableWorldProperties;
 import net.minecraft.world.World;
 import net.minecraft.world.dimension.DimensionType;
-import org.objectweb.asm.Opcodes;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.function.BooleanSupplier;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 @Mixin(ServerWorld.class)
 public abstract class ServerWorldMixin extends World {
-
     protected ServerWorldMixin(MutableWorldProperties properties, RegistryKey<World> registryRef, DimensionType dimensionType, Supplier<Profiler> profiler, boolean isClient, boolean debugWorld, long seed) {
         super(properties, registryRef, dimensionType, profiler, isClient, debugWorld, seed);
     }
 
-    @Shadow private boolean allPlayersSleeping;
+    private static final Logger LUCID_LOGGER = LogManager.getLogger("lucid-lite");
+    private static int tickBudget = 10; // Max time in ms to spend ticking block entities per tick
+    private long ticksToWarp = 0;
 
-    // Determine whether or not we are in a Lucid induced world tick
-    private boolean inWarpTick;
-    private boolean oneTickNight;
-    @Inject(method = "tick", at = @At(value = "HEAD"))
-    private void setInWarpTick(CallbackInfo ci) {
-        inWarpTick = Lucid.shouldWarp.contains(this);
-        oneTickNight = Lucid.tickSpeedMultiplier() == 0;
+    // Read config if it exists
+    static {
+        try {
+            Files.readAllLines(FabricLoader.getInstance().getConfigDir().resolve("lucid-lite.config")).forEach(line -> {
+                String[] splitLine = line.split(":", 2);
+                if (splitLine.length == 2 && splitLine[0].trim().equals("tick_budget")) {
+                    try {
+                        tickBudget = Integer.parseInt(splitLine[1].trim());
+                    } catch (NumberFormatException ignored) {
+                        LUCID_LOGGER.warn("Invalid value for option \"tick_budget\" in \"lucid-lite.config\", using default.");
+                    }
+                }
+            });
+        } catch (IOException ignored){};
     }
 
-    // Set allPlayersSleeping back to true as we are not waking players
-    @Inject(method = "tick", at = @At(value = "FIELD", target = "Lnet/minecraft/server/world/ServerWorld;allPlayersSleeping:Z", opcode = Opcodes.PUTFIELD, shift = At.Shift.AFTER))
-    private void allPlayersStillSleeping(BooleanSupplier shouldKeepTicking, CallbackInfo ci) {
-        this.allPlayersSleeping = true;
+    // When the world skips the night due to players sleeping store how many ticks are skipped
+    @Inject(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/world/ServerWorld;setTimeOfDay(J)V", shift = At.Shift.BEFORE))
+    private void onSleep(BooleanSupplier shouldKeepTicking, CallbackInfo ci) {
+        this.ticksToWarp = 24000L - this.getTimeOfDay();
     }
 
-    // Do not skip night, instead add the world to Lucid.shouldWarp
-    @Redirect(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/world/ServerWorld;setTimeOfDay(J)V"))
-    private void warpNotSkip(ServerWorld serverWorld, long timeOfDay) {
-        Lucid.shouldWarp.add(serverWorld);
-    }
-
-    // Do not wake players
-    @Redirect(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/world/ServerWorld;wakeSleepingPlayers()V"))
-    private void preventWakeSleepingPlayers(ServerWorld serverWorld) { }
-
-    // Warp chunk manager if in a vanilla induced tick or chunk manager warping is enabled. Disabled if oneTickNight is true
-    @Redirect(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/world/ServerChunkManager;tick(Ljava/util/function/BooleanSupplier;)V"))
-    private void warpChunks(ServerChunkManager serverChunkManager, BooleanSupplier shouldKeepTicking) {
-        if (!inWarpTick || (Lucid.isEnabledChunkManagerWarping() && !oneTickNight)) {
-            serverChunkManager.tick(shouldKeepTicking);
+    // Tick block entities at an increased rate
+    @Inject(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/world/ServerWorld;tickBlockEntities()V"))
+    private void applyExtraTicks(BooleanSupplier shouldKeepTicking, CallbackInfo ci) {
+        if (this.ticksToWarp == 0) {
+            return;
         }
-    }
 
-    // Warp raid manager if in a vanilla induced tick or raid manager warping is enabled.
-    @Redirect(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/village/raid/RaidManager;tick()V"))
-    private void warpRaidManager(RaidManager raidManager) {
-        if (!inWarpTick || Lucid.isEnabledRaidManagerWarping()) {
-            raidManager.tick();
-        }
-    }
+        int ticksWarped = 0;
+        Instant start = Clock.systemUTC().instant();
+        for (; ticksWarped < ticksToWarp; ++ticksWarped) {
+            this.tickBlockEntities();
 
-    // Warp block entities if in a vanilla induced world tick or block entity warping is enabled
-    @Redirect(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/world/ServerWorld;tickBlockEntities()V"))
-    private void warpBlockEntities(ServerWorld serverWorld) {
-        if (!inWarpTick || Lucid.isEnabledBlockEntityWarping()) {
-            tickBlockEntities();
+            // Limit how long we can spend ticking block entities
+            if (Clock.systemUTC().instant().isAfter(start.plusMillis(tickBudget))) {
+                break;
+            }
         }
-    }
 
-    // Warp entities if in a vanilla induced world tick or entity warping is enabled. Disabled if oneTickNight is true
-    @Redirect(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/world/ServerWorld;tickEntity(Ljava/util/function/Consumer;Lnet/minecraft/entity/Entity;)V"))
-    private void warpEntities(ServerWorld serverWorld, Consumer<Entity> consumer, Entity entity) {
-        if (!inWarpTick || (Lucid.isEnabledEntityWarping() && !oneTickNight)) {
-            tickEntity(consumer, entity);
-        }
+        ticksToWarp -= ticksWarped;
+        LUCID_LOGGER.info("Ticked block entities " + ticksWarped + " times in " + Duration.between(start, Clock.systemUTC().instant()).toMillis() + " ms");
     }
 }

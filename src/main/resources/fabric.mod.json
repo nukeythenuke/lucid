@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "id": "lucid",
+  "id": "lucid-lite",
   "version": "${version}",
 
-  "name": "lucid",
+  "name": "Lucid lite",
   "description": "Instead of skipping the night time goes faster as you sleep",
   "authors": [
     "nukeythenuke"
@@ -14,22 +14,18 @@
   },
 
   "license": "CC0-1.0",
-  "icon": "assets/lucid/icon.png",
+  "icon": "assets/lucid-lite/icon.png",
 
   "environment": "*",
-  "entrypoints": {
-    "main": [
-      "me.nukeythenuke.lucid.Lucid"
-    ]
-  },
   "mixins": [
-    "lucid.mixins.json"
+    "lucid-lite.mixins.json"
   ],
 
   "depends": {
     "fabricloader": ">=0.7.4",
     "minecraft": ">=1.14"
   },
-  "suggests": {
+  "breaks": {
+    "lucid": "*"
   }
 }

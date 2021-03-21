@@ -4,10 +4,7 @@
   "package": "me.nukeythenuke.lucid.mixin",
   "compatibilityLevel": "JAVA_8",
   "mixins": [
-    "MinecraftServerMixin",
     "ServerWorldMixin"
-  ],
-  "client": [
   ],
   "injectors": {
     "defaultRequire": 1
