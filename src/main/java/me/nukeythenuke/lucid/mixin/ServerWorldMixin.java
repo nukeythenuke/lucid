@@ -1,6 +1,6 @@
 package me.nukeythenuke.lucid.mixin;
 
-import net.fabricmc.loader.api.FabricLoader;
+import me.nukeythenuke.lucid.Config;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.profiler.Profiler;
 import net.minecraft.util.registry.RegistryKey;
@@ -14,10 +14,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.io.IOException;
-import java.nio.file.Files;
 import java.time.Clock;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
@@ -29,24 +26,11 @@ public abstract class ServerWorldMixin extends World {
     }
 
     private static final Logger LUCID_LOGGER = LogManager.getLogger("lucid-lite");
-    private static int tickBudget = 10; // Max time in ms to spend ticking block entities per tick
-    private long ticksToWarp = 0;
+    private static final int tickBudget = Config.getIntOrDefault("tickBudget", 10); // Max time in ms to spend ticking block entities per tick
 
-    // Read config if it exists
-    static {
-        try {
-            Files.readAllLines(FabricLoader.getInstance().getConfigDir().resolve("lucid-lite.config")).forEach(line -> {
-                String[] splitLine = line.split(":", 2);
-                if (splitLine.length == 2 && splitLine[0].trim().equals("tick_budget")) {
-                    try {
-                        tickBudget = Integer.parseInt(splitLine[1].trim());
-                    } catch (NumberFormatException ignored) {
-                        LUCID_LOGGER.warn("Invalid value for option \"tick_budget\" in \"lucid-lite.config\", using default.");
-                    }
-                }
-            });
-        } catch (IOException ignored){};
-    }
+    private long ticksToWarp = 0;
+    private long ticksWarped = 0;
+    private long ticksSpanned = 1;
 
     // When the world skips the night due to players sleeping store how many ticks are skipped
     @Inject(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/world/ServerWorld;setTimeOfDay(J)V", shift = At.Shift.BEFORE))
@@ -61,18 +45,23 @@ public abstract class ServerWorldMixin extends World {
             return;
         }
 
-        int ticksWarped = 0;
         Instant start = Clock.systemUTC().instant();
         for (; ticksWarped < ticksToWarp; ++ticksWarped) {
             this.tickBlockEntities();
 
             // Limit how long we can spend ticking block entities - if tickBudget is set to 0 we don't budget our time
             if (tickBudget != 0 && Clock.systemUTC().instant().isAfter(start.plusMillis(tickBudget))) {
+                ++ticksSpanned;
                 break;
             }
         }
 
-        ticksToWarp -= ticksWarped;
-        LUCID_LOGGER.info("Ticked block entities " + ticksWarped + " times in " + Duration.between(start, Clock.systemUTC().instant()).toMillis() + " ms");
+        // Reset variables and log info
+        if (ticksWarped == ticksToWarp) {
+            LUCID_LOGGER.info("Ticked block entities " + ticksWarped + " times over " + ticksSpanned + " ticks");
+            ticksWarped = 0;
+            ticksToWarp = 0;
+            ticksSpanned = 1;
+        }
     }
 }
