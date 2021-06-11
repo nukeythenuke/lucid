@@ -3,17 +3,17 @@
   "id": "lucid-lite",
   "version": "${version}",
 
-  "name": "lucid lite",
+  "name": "Lucid lite",
   "description": "Instead of skipping the night time goes faster as you sleep",
   "authors": [
     "nukeythenuke"
   ],
   "contact": {
     "homepage": "",
-    "sources": "https://github.com/nukeythenuke/lucid/tree/lite"
+    "sources": ""
   },
 
-  "license": "MIT",
+  "license": "CC0-1.0",
   "icon": "assets/lucid-lite/icon.png",
 
   "environment": "*",
@@ -22,9 +22,8 @@
   ],
 
   "depends": {
-    "fabricloader": ">=0.11.3",
-    "minecraft": ">=1.17"
-    "java": ">=16"
+    "fabricloader": ">=0.7.4",
+    "minecraft": ">=1.14"
   },
   "breaks": {
     "lucid": "*"
