@@ -12,4 +12,8 @@ Sky jumps when sleeping.
 
 ## Compatibility
 May or may not work with sleep-vote type mods/datapacks. Let me know.  
-If you know of any incompatibilities please let me know so I can try work them out.
+
+Known not to work with carpet mod due to conflicting mixins
+
+If you know of any other incompatibilities please let me know so I can try work them out.
+Also you can try the [lite version](https://github.com/nukeythenuke/lucid/tree/lite)
