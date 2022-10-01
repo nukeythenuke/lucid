@@ -3,6 +3,7 @@ package me.nukeythenuke.lucid.mixin;
 import me.nukeythenuke.lucid.Config;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.profiler.Profiler;
+import net.minecraft.util.registry.RegistryEntry;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.MutableWorldProperties;
 import net.minecraft.world.World;
@@ -21,8 +22,8 @@ import java.util.function.Supplier;
 
 @Mixin(ServerWorld.class)
 public abstract class ServerWorldMixin extends World {
-    protected ServerWorldMixin(MutableWorldProperties properties, RegistryKey<World> registryRef, DimensionType dimensionType, Supplier<Profiler> profiler, boolean isClient, boolean debugWorld, long seed) {
-        super(properties, registryRef, dimensionType, profiler, isClient, debugWorld, seed);
+    protected ServerWorldMixin(MutableWorldProperties properties, RegistryKey<World> registryRef, RegistryEntry<DimensionType> dimension, Supplier<Profiler> profiler, boolean isClient, boolean debugWorld, long seed, int maxChainedNeighborUpdates) {
+        super(properties, registryRef, dimension, profiler, isClient, debugWorld, seed, maxChainedNeighborUpdates);
     }
 
     private static final Logger LUCID_LOGGER = LogManager.getLogger("lucid-lite");
@@ -35,7 +36,7 @@ public abstract class ServerWorldMixin extends World {
     // When the world skips the night due to players sleeping store how many ticks are skipped
     @Inject(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/world/ServerWorld;setTimeOfDay(J)V", shift = At.Shift.BEFORE))
     private void onSleep(BooleanSupplier shouldKeepTicking, CallbackInfo ci) {
-        this.ticksToWarp = 24000L - this.getTimeOfDay();
+        this.ticksToWarp = 24000L - this.properties.getTimeOfDay();
     }
 
     // Tick block entities at an increased rate
